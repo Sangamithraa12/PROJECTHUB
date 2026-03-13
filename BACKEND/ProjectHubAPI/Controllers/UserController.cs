@@ -1,0 +1,80 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProjectHubAPI.Data;
+using ProjectHubAPI.Models;
+
+namespace ProjectHubAPI.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize] 
+    public class UserController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public UserController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public IActionResult GetUsers()
+        {
+            var users = _context.Users
+                .Include(u => u.Role)
+                .Select(u => new {
+                    u.Id,
+                    u.Name,
+                    u.Email,
+                    RoleName = u.Role != null ? u.Role.Name : "User"
+                }).ToList();
+            return Ok(users);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult CreateUser(User user)
+        {
+            _context.Users.Add(user);
+            _context.SaveChanges();
+
+            return Ok(user);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult UpdateUser(int id, User user)
+        {
+            var existing = _context.Users.Find(id);
+
+            if (existing == null)
+                return NotFound();
+
+            existing.Name = user.Name;
+            existing.Email = user.Email;
+            existing.Password = user.Password;
+            existing.RoleId = user.RoleId;
+
+            _context.SaveChanges();
+
+            return Ok(existing);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult DeleteUser(int id)
+        {
+            var user = _context.Users.Find(id);
+
+            if (user == null)
+                return NotFound();
+
+            _context.Users.Remove(user);
+            _context.SaveChanges();
+
+            return Ok();
+        }
+    }
+}
+

@@ -1,0 +1,183 @@
+<div class="dashboard-container">
+  
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <header class="content-header">
+      <div class="header-left">
+        <h1>Tasks</h1>
+        <p class="date">Track and update assigned activities</p>
+      </div>
+      <button *ngIf="userRole === 'Manager' || userRole === 'Admin'" (click)="openCreateModal()" class="btn-primary-sm">
+        + Create Task
+      </button>
+    </header>
+
+    <div class="tasks-list animate-fade">
+      <div *ngFor="let task of tasks" class="task-card">
+        <div class="task-main-info">
+          <div class="task-status-indicator">
+            <span class="status-dot" [class]="task.status.toLowerCase() || 'pending'"></span>
+          </div>
+          
+          <div class="task-body">
+            <div class="task-header">
+              <div class="title-area">
+                <h3>{{ task.title }}</h3>
+                <span class="project-chip">
+                  <span class="chip-icon">📂</span>
+                  {{ task.projectName }}
+                </span>
+              </div>
+
+              <div class="task-meta">
+                <div class="task-actions" *ngIf="userRole === 'Manager' || userRole === 'Admin'">
+                  <button (click)="openEditModal(task)" class="btn-task-action edit" title="Edit Task">✎</button>
+                  <button (click)="deleteTask(task.id)" class="btn-task-action delete" title="Delete Task">🗑️</button>
+                </div>
+                <span class="assignee-tag">
+                  <span class="tag-label">Assigned to</span>
+                  <span class="tag-value">{{ task.assignedToName || 'Unassigned' }}</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="task-controls">
+              <div class="status-pill-container">
+                <select [value]="task.status" 
+                        (change)="updateStatus(task.id, $event)" 
+                        class="status-pill-select"
+                        [disabled]="userRole === 'Employee' && task.assignedTo !== currentUserId">
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              
+              <div class="quick-comment-box" *ngIf="task.assignedTo === currentUserId || userRole === 'Manager' || userRole === 'Admin'">
+                <input type="text" [(ngModel)]="commentInputs[task.id]" [name]="'comment-' + task.id" placeholder="Write a comment..." class="minimal-comment-input">
+                <button (click)="addComment(task.id)" class="btn-comment-send" [disabled]="!commentInputs[task.id]">
+                  <span class="send-icon">↗</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="task-comments-section" *ngIf="task.comments && task.comments.length > 0">
+          <div class="comments-scroll">
+            <div *ngFor="let comment of task.comments" class="comment-bubble-wrapper" [class.own-comment]="comment.userId === currentUserId">
+              <div class="comment-bubble">
+                <div class="bubble-header">
+                  <span class="bubble-user">{{ comment.userName }}</span>
+                  <span class="bubble-time">{{ comment.createdAt | date:'HH:mm' }}</span>
+                </div>
+                
+                <div *ngIf="editingCommentId !== comment.id" class="bubble-content">
+                  <p>{{ comment.content }}</p>
+                </div>
+                
+                <div *ngIf="editingCommentId === comment.id" class="bubble-edit-area">
+                  <textarea [(ngModel)]="editCommentContent" name="editComment" class="bubble-textarea"></textarea>
+                  <div class="bubble-edit-actions">
+                    <button (click)="cancelEdit()" class="btn-bubble-cancel">Cancel</button>
+                    <button (click)="updateComment(comment.id)" class="btn-bubble-save">Save</button>
+                  </div>
+                </div>
+
+                <div class="bubble-actions" *ngIf="comment.userId === currentUserId || userRole === 'Manager' || userRole === 'Admin'">
+                  <button (click)="startEditComment(comment)" class="btn-bubble-icon" title="Edit">✎</button>
+                  <button (click)="deleteComment(comment.id)" class="btn-bubble-icon delete" title="Delete">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+    <div *ngIf="showCreateModal" class="modal-overlay">
+      <div class="modal-content glass-card">
+        <h2>Create New Task</h2>
+        <form (ngSubmit)="createTask()">
+          <div class="input-group">
+            <label>Task Title</label>
+            <input type="text" [(ngModel)]="newTask.title" name="title" required placeholder="e.g., API Integration">
+          </div>
+          <div class="input-group">
+            <label>Project</label>
+            <select [(ngModel)]="newTask.projectId" name="projectId" required>
+              <option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</option>
+            </select>
+          </div>
+          <div class="input-group">
+
+            <label>Assign To</label>
+            <select [(ngModel)]="newTask.assignedTo" name="assignedTo">
+              <option [value]="null" disabled selected>
+                <ng-container *ngIf="isLoadingUsers">Loading members...</ng-container>
+                <ng-container *ngIf="!isLoadingUsers">{{ users.length > 0 ? 'Select an employee...' : 'No employees found' }}</ng-container>
+              </option>
+              <option *ngFor="let u of users" [value]="u.id">
+                {{ u.name }} ({{ u.roleName }})
+              </option>
+              <option *ngIf="userLoadError" disabled class="error-option">{{ userLoadError }}</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" (click)="showCreateModal = false" class="btn-secondary" [disabled]="isCreatingTask">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="isCreatingTask">
+              {{ isCreatingTask ? 'Creating...' : 'Create Task' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <div *ngIf="showEditModal" class="modal-overlay">
+      <div class="modal-content glass-card">
+        <h2>Edit Task</h2>
+        <form (ngSubmit)="updateTask()">
+          <div class="input-group">
+            <label>Task Title</label>
+            <input type="text" [(ngModel)]="editingTask.title" name="title" required placeholder="e.g., API Integration">
+          </div>
+          <div class="input-group">
+            <label>Project</label>
+
+            <select [(ngModel)]="editingTask.projectId" name="projectId" required>
+              <option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Assign To</label>
+
+            <select [(ngModel)]="editingTask.assignedTo" name="assignedTo">
+              <option [value]="null">Unassigned</option>
+              <option *ngFor="let u of users" [value]="u.id">
+                {{ u.name }} ({{ u.roleName }})
+              </option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Status</label>
+            <select [(ngModel)]="editingTask.status" name="status" required>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" (click)="showEditModal = false" class="btn-secondary" [disabled]="isUpdatingTask">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="isUpdatingTask">
+              {{ isUpdatingTask ? 'Updating...' : 'Update Task' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+

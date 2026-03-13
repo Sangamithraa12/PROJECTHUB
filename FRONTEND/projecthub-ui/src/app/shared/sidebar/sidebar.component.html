@@ -1,0 +1,36 @@
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo-orb-sm"></div>
+    <h2>ProjectHub</h2>
+  </div>
+
+  <nav class="nav-links">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <span class="icon">📊</span> Dashboard
+    </a>
+    <a routerLink="/projects" routerLinkActive="active" class="nav-item">
+      <span class="icon">📁</span> Projects
+    </a>
+
+
+    <a routerLink="/tasks" routerLinkActive="active" class="nav-item">
+      <span class="icon">✅</span> Tasks
+    </a>
+    <a *ngIf="userRole === 'Admin'" routerLink="/users" routerLinkActive="active" class="nav-item">
+      <span class="icon">👥</span> Users
+    </a>
+  </nav>
+
+  <div class="user-profile">
+    <div class="user-info">
+      <p class="user-name">{{ userName }}</p>
+      <p class="user-role">{{ userRole }}</p>
+    </div>
+    <button (click)="toggleTheme()" class="btn-theme-toggle" title="Switch Theme">
+      Theme
+    </button>
+    <button (click)="logout()" class="btn-logout-full">
+      Logout
+    </button>
+  </div>
+</aside>

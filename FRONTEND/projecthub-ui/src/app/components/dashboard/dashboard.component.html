@@ -1,0 +1,92 @@
+<div class="dashboard-container">
+  
+  <app-sidebar></app-sidebar>
+
+  
+  <main class="main-content">
+    <header class="content-header">
+      <h1>Welcome back, {{ currentUser?.user?.name }}!</h1>
+      <p class="date">{{ stats.tasks }} tasks active today</p>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon purple">📁</div>
+        <div class="stat-info">
+          <h3>Total Projects</h3>
+          <p class="stat-value">{{ stats.projects }}</p>
+        </div>
+      </div>
+      <div class="stat-card">
+
+        <div class="stat-icon blue">📝</div>
+        <div class="stat-info">
+          <h3>Active Tasks</h3>
+          <p class="stat-value">{{ stats.tasks }}</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🎯</div>
+        <div class="stat-info">
+          <h3>Completed</h3>
+          <p class="stat-value">{{ stats.completedTasks }}</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">⏳</div>
+        <div class="stat-info">
+          <h3>Pending</h3>
+          <p class="stat-value">{{ stats.pendingTasks }}</p>
+        </div>
+      </div>
+    </div>
+
+    
+    <section class="role-view">
+      <div *ngIf="userRole === 'Admin'" class="admin-section animate-fade">
+        <h2>System Overview (Admin)</h2>
+        <div class="placeholder-card">
+          <p>Quick Access: User Management | System Reports | Configuration</p>
+        </div>
+      </div>
+
+      <div *ngIf="userRole === 'Manager'" class="manager-section animate-fade">
+        <h2>Project Management (Manager)</h2>
+
+        <div class="placeholder-card">
+          <p>Quick Access: Create Task | Assign Team | Track Progress</p>
+        </div>
+      </div>
+
+
+      <div *ngIf="userRole === 'Employee'" class="employee-section animate-fade">
+        <div class="section-header">
+          <h2>My Assignments</h2>
+          <a routerLink="/tasks" class="btn-text">View All Tasks →</a>
+        </div>
+        
+        <div class="tasks-mini-list" *ngIf="myTasks.length > 0; else noTasks">
+          <div *ngFor="let task of myTasks.slice(0, 5)" class="task-mini-card animate-fade">
+            <div class="task-mini-info">
+              <span class="task-status-dot" [class]="task.status?.toLowerCase() || 'pending'"></span>
+              <div class="task-mini-details">
+                <h4>{{ task.title }}</h4>
+                <p>{{ task.projectName }}</p>
+
+              </div>
+            </div>
+            <div class="task-mini-meta">
+              <span class="status-badge" [class]="task.status?.toLowerCase() || 'pending'">{{ task.status }}</span>
+            </div>
+          </div>
+        </div>
+        <ng-template #noTasks>
+          <div class="placeholder-card">
+            <p>You have no active assignments. Enjoy your day! 🌟</p>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+  </main>
+</div>
+
