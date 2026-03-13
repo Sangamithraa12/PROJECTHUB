@@ -105,4 +105,4 @@ This project is for educational purposes.
 
 ---
 
-> Made with ❤️ by [Sangamithraa12](https://github.com/Sangamithraa12)
+> Made with Passion by [Sangamithraa12](https://github.com/Sangamithraa12)
