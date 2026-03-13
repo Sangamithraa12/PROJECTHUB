@@ -99,10 +99,6 @@ App runs at: `http://localhost:4200`
 
 ---
 
-## 📄 License
 
-This project is for educational purposes.
-
----
 
 > Made with Passion by [Sangamithraa12](https://github.com/Sangamithraa12)
